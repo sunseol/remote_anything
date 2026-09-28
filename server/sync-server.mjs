@@ -819,7 +819,7 @@ function broadcast(sessionId, payload) {
 }
 
 const APP_HTML = String.raw`<!doctype html>
-<html lang="ko"><head><meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Remote Anything</title>
 <style>
@@ -856,9 +856,9 @@ details pre{font-size:12px;color:var(--dim);white-space:pre-wrap;background:#0a0
 </style></head><body>
 <header><button id="back" hidden>&larr;</button><h1 id="title">Remote Anything</h1><span class="chip" id="status"></span></header>
 <div class="pair-box" id="pairBox" hidden>
-  <div>Aside 데스크톱 터미널에 표시된 페어링 코드를 입력하세요.</div>
+  <div id="pairPrompt"></div>
   <input id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
-  <button class="primary" id="pairBtn">연결</button>
+  <button class="primary" id="pairBtn"></button>
   <div id="pairMsg" style="color:var(--dim);font-size:13px"></div>
 </div>
 <div class="list" id="list"></div>
@@ -866,49 +866,54 @@ details pre{font-size:12px;color:var(--dim);white-space:pre-wrap;background:#0a0
 <div id="pendingBar"></div>
 <div id="conn"></div>
 <div id="composer" hidden>
-  <textarea id="text" placeholder="메시지 입력..."></textarea>
-  <button class="primary" id="send">전송</button>
-  <button id="stop" hidden>중지</button>
+  <textarea id="text"></textarea>
+  <button class="primary" id="send"></button>
+  <button id="stop" hidden></button>
 </div>
 <script>
 const $=function(id){return document.getElementById(id)};
+const KO=(navigator.languages||[navigator.language]).some(function(l){return /^ko/i.test(l||'')});
+const L=KO?{pairPrompt:'서버 터미널에 표시된 페어링 코드를 입력하세요.',connect:'연결',placeholder:'메시지 입력...',send:'전송',stop:'중지',badCode:'코드가 올바르지 않습니다',noSessions:'세션이 없습니다',attachment:'(첨부 메시지)',thinking:'사고 과정',runningBar:'세션 실행 중 — 새 메시지는 대기열에 추가됩니다',connecting:'연결 중...',live:'실시간 연결됨',retrying:'연결 끊김 — 재시도 중...',sendError:'전송 오류: ',stopRequested:'중지 요청됨',stopError:'중지 오류: ',queued:'대기열에 추가됨',sent:'전송됨 — 응답 대기 중',listError:'목록 오류: '}
+:{pairPrompt:'Enter the pairing code shown in the server terminal.',connect:'Connect',placeholder:'Message...',send:'Send',stop:'Stop',badCode:'Invalid code',noSessions:'No sessions',attachment:'(attachment)',thinking:'Thinking',runningBar:'Session running — new messages will be queued',connecting:'Connecting...',live:'Live',retrying:'Disconnected — retrying...',sendError:'Send failed: ',stopRequested:'Stop requested',stopError:'Stop failed: ',queued:'Queued',sent:'Sent — waiting for reply',listError:'Couldn\'t load sessions: '};
+document.documentElement.lang=KO?'ko':'en';
+$('pairPrompt').textContent=L.pairPrompt;$('pairBtn').textContent=L.connect;$('text').placeholder=L.placeholder;$('send').textContent=L.send;$('stop').textContent=L.stop;
 let sessionId=null, offset=0, es=null, connTimer=null, statusTimer=null, lastStatus='idle';
 function conn(t){$('conn').textContent=t}
 async function api(path,opts){const r=await fetch(path,Object.assign({headers:{'content-type':'application/json'}},opts||{}));if(r.status===401){showPair();throw new Error('unauthorized')}const b=await r.json().catch(function(){return {}});if(!r.ok)throw new Error(b.error||('HTTP '+r.status));return b}
 function showPair(){$('pairBox').hidden=false;$('list').hidden=true;$('view').hidden=true;$('composer').hidden=true}
-async function pair(){const code=$('code').value.replace(/\D/g,'');$('pairMsg').textContent='';try{await api('/api/pair',{method:'POST',body:JSON.stringify({code:code})});$('pairBox').hidden=true;loadList().catch(function(){})}catch(e){$('pairMsg').textContent='코드가 올바르지 않습니다'}}
+async function pair(){const code=$('code').value.replace(/\D/g,'');$('pairMsg').textContent='';try{await api('/api/pair',{method:'POST',body:JSON.stringify({code:code})});$('pairBox').hidden=true;loadList().catch(function(){})}catch(e){$('pairMsg').textContent=L.badCode}}
 $('pairBtn').onclick=pair;$('code').onkeydown=function(e){if(e.key==='Enter')pair()};
-async function loadList(){const b=await api('/api/session');$('title').textContent='Remote Anything';$('status').textContent='';$('list').hidden=false;$('view').hidden=true;$('composer').hidden=true;$('back').hidden=true;const el=$('list');el.innerHTML='';if(!b.sessions.length){el.textContent='세션이 없습니다';return}for(const s of b.sessions){const d=document.createElement('div');d.className='item';const t=document.createElement('div');t.className='title';t.textContent=s.title||s.id;const m=document.createElement('div');m.className='meta';const c=document.createElement('span');c.className='chip '+s.status;c.textContent=s.status;const when=document.createElement('span');when.textContent=new Date(s.updatedAt||Date.now()).toLocaleString();m.append(c,when);d.append(t,m);d.onclick=function(){openSession(s.id,s.title)};el.append(d)}}
+async function loadList(){const b=await api('/api/session');$('title').textContent='Remote Anything';$('status').textContent='';$('list').hidden=false;$('view').hidden=true;$('composer').hidden=true;$('back').hidden=true;const el=$('list');el.innerHTML='';if(!b.sessions.length){el.textContent=L.noSessions;return}for(const s of b.sessions){const d=document.createElement('div');d.className='item';const t=document.createElement('div');t.className='title';t.textContent=s.title||s.id;const m=document.createElement('div');m.className='meta';const c=document.createElement('span');c.className='chip '+s.status;c.textContent=s.status;const when=document.createElement('span');when.textContent=new Date(s.updatedAt||Date.now()).toLocaleString();m.append(c,when);d.append(t,m);d.onclick=function(){openSession(s.id,s.title)};el.append(d)}}
 function renderLine(el,l){
   const role=l.role;
   if(role==='turn-lifecycle'){const d=document.createElement('div');d.className='divider';d.textContent='— turn '+l.event+' —';el.append(d);return}
-  if(role==='user'){let text='';if(typeof l.content==='string')text=l.content;else if(Array.isArray(l.content))text=l.content.filter(function(c){return c.type==='text'}).map(function(c){return c.text}).join('\n');const w=document.createElement('div');w.className='row user';const b=document.createElement('div');b.className='bubble';b.textContent=text||'(첨부 메시지)';w.append(b);el.append(w);return}
-  if(role==='assistant'){const w=document.createElement('div');w.className='row';const b=document.createElement('div');b.className='bubble';if(Array.isArray(l.content)){for(const c of l.content){if(c.type==='text'&&c.text){const t=document.createElement('div');t.textContent=c.text;b.append(t)}else if(c.type==='thinking'&&c.thinking){const d=document.createElement('details');const s=document.createElement('summary');s.className='summary';s.textContent='사고 과정';const p=document.createElement('pre');p.textContent=c.thinking;d.append(s,p);b.append(d)}else{const p=document.createElement('pre');p.textContent='['+c.type+'] '+JSON.stringify(c).slice(0,300);b.append(p)}}}else{b.textContent=JSON.stringify(l).slice(0,500)}w.append(b);el.append(w);return}
+  if(role==='user'){let text='';if(typeof l.content==='string')text=l.content;else if(Array.isArray(l.content))text=l.content.filter(function(c){return c.type==='text'}).map(function(c){return c.text}).join('\n');const w=document.createElement('div');w.className='row user';const b=document.createElement('div');b.className='bubble';b.textContent=text||L.attachment;w.append(b);el.append(w);return}
+  if(role==='assistant'){const w=document.createElement('div');w.className='row';const b=document.createElement('div');b.className='bubble';if(Array.isArray(l.content)){for(const c of l.content){if(c.type==='text'&&c.text){const t=document.createElement('div');t.textContent=c.text;b.append(t)}else if(c.type==='thinking'&&c.thinking){const d=document.createElement('details');const s=document.createElement('summary');s.className='summary';s.textContent=L.thinking;const p=document.createElement('pre');p.textContent=c.thinking;d.append(s,p);b.append(d)}else{const p=document.createElement('pre');p.textContent='['+c.type+'] '+JSON.stringify(c).slice(0,300);b.append(p)}}}else{b.textContent=JSON.stringify(l).slice(0,500)}w.append(b);el.append(w);return}
   if(role==='system-message'){const d=document.createElement('div');d.className='sysmsg';d.textContent=(l.kind?('['+l.kind+'] '):'')+(typeof l.content==='string'?l.content:JSON.stringify(l.content));el.append(d);return}
   const d=document.createElement('div');d.className='raw';d.textContent=JSON.stringify(l,null,1).slice(0,1200);el.append(d);
 }
-function setStatusBar(s){lastStatus=s;$('status').textContent=s;$('status').className='chip '+s;$('stop').hidden=(s!=='running'&&s!=='suspended');$('pendingBar').style.display=(s==='running')?'block':'none';$('pendingBar').textContent=(s==='running')?'세션 실행 중 — 새 메시지는 대기열에 추가됩니다':''}
+function setStatusBar(s){lastStatus=s;$('status').textContent=s;$('status').className='chip '+s;$('stop').hidden=(s!=='running'&&s!=='suspended');$('pendingBar').style.display=(s==='running')?'block':'none';$('pendingBar').textContent=(s==='running')?L.runningBar:''}
 function scrollBottom(){$('view').scrollTop=$('view').scrollHeight}
 function connectStream(){
-  if(!sessionId)return;if(es)es.close();conn('연결 중...');
+  if(!sessionId)return;if(es)es.close();conn(L.connecting);
   es=new EventSource('/api/events?session='+encodeURIComponent(sessionId)+'&from='+offset);
-  es.onopen=function(){conn('실시간 연결됨')};
-  es.onerror=function(){conn('연결 끊김 — 재시도 중...');if(es)es.close();clearTimeout(connTimer);connTimer=setTimeout(connectStream,1200)};
+  es.onopen=function(){conn(L.live)};
+  es.onerror=function(){conn(L.retrying);if(es)es.close();clearTimeout(connTimer);connTimer=setTimeout(connectStream,1200)};
   es.onmessage=function(ev){const msg=JSON.parse(ev.data);
     if(msg.type==='snapshot'){offset=msg.bytes;$('view').innerHTML='';for(const l of msg.lines)renderLine($('view'),l);scrollBottom()}
     else if(msg.type==='append'){offset=msg.bytes;for(const l of msg.lines)renderLine($('view'),l);scrollBottom()}
     else if(msg.type==='resync'){offset=0;connectStream()}
     else if(msg.type==='status'){setStatusBar(msg.status)}
-    else if(msg.type==='sendError'){conn('전송 오류: '+msg.error)}
+    else if(msg.type==='sendError'){conn(L.sendError+msg.error)}
   };
 }
 async function pollStatus(){if(!sessionId)return;try{const b=await api('/api/status?session='+encodeURIComponent(sessionId));setStatusBar(b.status)}catch(e){}}
 async function openSession(id,title){sessionId=id;offset=0;$('list').hidden=true;$('view').hidden=false;$('view').innerHTML='';$('composer').hidden=false;$('back').hidden=false;$('title').textContent=title||id;connectStream();pollStatus();clearInterval(statusTimer);statusTimer=setInterval(pollStatus,2500)}
 $('back').onclick=function(){sessionId=null;if(es)es.close();clearInterval(statusTimer);loadList().catch(function(){})};
-$('stop').onclick=async function(){try{await api('/api/stop',{method:'POST',body:JSON.stringify({session:sessionId})});conn('중지 요청됨')}catch(e){conn('중지 오류: '+e.message)}};
-$('send').onclick=async function(){const text=$('text').value.trim();if(!text||!sessionId)return;$('text').value='';try{const b=await api('/api/send',{method:'POST',body:JSON.stringify({session:sessionId,text:text})});conn(b.mode==='queued'?'대기열에 추가됨':'전송됨 — 응답 대기 중')}catch(e){conn('전송 오류: '+e.message);$('text').value=text}};
+$('stop').onclick=async function(){try{await api('/api/stop',{method:'POST',body:JSON.stringify({session:sessionId})});conn(L.stopRequested)}catch(e){conn(L.stopError+e.message)}};
+$('send').onclick=async function(){const text=$('text').value.trim();if(!text||!sessionId)return;$('text').value='';try{const b=await api('/api/send',{method:'POST',body:JSON.stringify({session:sessionId,text:text})});conn(b.mode==='queued'?L.queued:L.sent)}catch(e){conn(L.sendError+e.message);$('text').value=text}};
 $('text').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('send').click()}};
-loadList().catch(function(e){if(e.message!=='unauthorized')conn('목록 오류: '+e.message)});
+loadList().catch(function(e){if(e.message!=='unauthorized')conn(L.listError+e.message)});
 </script></body></html>`;
 
 function json(res, status, body, headers = {}) {
@@ -1197,9 +1202,9 @@ http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/file') {
       const found = await resolveStoredFilePath(url.searchParams.get('path') ?? '', url.searchParams.get('session') ?? '');
       if (found?.status) return json(res, found.status, { error: found.error });
-      if (!found || found.outside) return json(res, 403, { error: '세션 저장소 밖의 경로입니다.' });
+      if (!found || found.outside) return json(res, 403, { error: 'Path is outside the session storage.' });
       if (found.missing) {
-        const message = '세션 워크스페이스에서 파일을 찾을 수 없습니다: ' + (found.path ?? '');
+        const message = 'File not found in the session workspace: ' + (found.path ?? '');
         const htmlMessage = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;');
         if ((req.headers.accept ?? '').includes('text/html')) {
           res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' });

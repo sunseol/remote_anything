@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { MonitorSmartphone, Plus, RefreshCw } from "lucide-react";
 import { ChatView } from "@/components/ChatView";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { NewSessionSheet } from "@/components/NewSessionSheet";
 import { PairingView } from "@/components/PairingView";
 import { SessionList } from "@/components/SessionList";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
+import { t } from "@/lib/i18n";
 import type { ProjectInfo, SessionInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +16,7 @@ type Phase = "checking" | "pairing" | "ready";
 function Splash() {
   return (
     <div className="flex h-dvh items-center justify-center bg-background">
-      <p className="animate-pulse text-sm text-muted-foreground">Remote Anything 시작 중...</p>
+      <p className="animate-pulse text-sm text-muted-foreground">{t("app.starting")}</p>
     </div>
   );
 }
@@ -25,8 +27,8 @@ function EmptyState() {
       <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <MonitorSmartphone className="size-7" />
       </div>
-      <h2 className="text-base font-semibold">세션을 선택하세요</h2>
-      <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">목록에서 Aside 세션을 열면 실시간 대화가 여기에 표시됩니다.</p>
+      <h2 className="text-base font-semibold">{t("app.selectSession")}</h2>
+      <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">{t("app.selectSessionHint")}</p>
     </div>
   );
 }
@@ -104,20 +106,21 @@ function App() {
         <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
           <div className="min-w-0">
             <h1 className="text-sm font-semibold">Remote Anything</h1>
-            <p className="truncate text-xs text-muted-foreground">컴퓨터의 라이브 세션</p>
+            <p className="truncate text-xs text-muted-foreground">{t("app.subtitle")}</p>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => setNewSessionOpen(true)} aria-label="새 세션">
+            <LanguageToggle />
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => setNewSessionOpen(true)} aria-label={t("app.newSession")}>
               <Plus className="size-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => void refreshManual()} aria-label="세션 목록 새로고침">
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => void refreshManual()} aria-label={t("app.refreshList")}>
               <RefreshCw className={cn("size-4", (loading || refreshing) && "animate-spin")} />
             </Button>
           </div>
         </div>
         {loadError ? (
           <p className="border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-xs text-destructive">
-            세션 목록을 가져오지 못했습니다. 잠시 후 자동으로 재시도합니다.
+            {t("app.loadError")}
           </p>
         ) : null}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

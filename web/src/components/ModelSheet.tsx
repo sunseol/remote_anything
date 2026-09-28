@@ -3,6 +3,7 @@ import { Cpu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 interface ModelEntry {
   id: string;
@@ -56,7 +57,7 @@ export function ModelSheet({ sessionId, open, onClose, onUpdated }: ModelSheetPr
           setThinkingLevel(modelData.model.thinkingLevel ?? "high");
         }
       })
-      .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : "불러오기 실패"); });
+      .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : t("model.loadFailed")); });
     return () => { cancelled = true; };
   }, [open, sessionId]);
 
@@ -94,27 +95,27 @@ export function ModelSheet({ sessionId, open, onClose, onUpdated }: ModelSheetPr
       onUpdated({ provider: selected.provider, modelId: selected.modelId, thinkingLevel, fastMode: false });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "변경 실패");
+      setError(err instanceof Error ? err.message : t("model.changeFailed"));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label="모델 변경">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={t("model.title")}>
       <div
         className="flex max-h-[88vh] w-full flex-col rounded-t-2xl border border-border bg-card shadow-lg md:max-h-[75vh] md:max-w-lg md:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <Cpu className="size-4 shrink-0 text-muted-foreground" />
-          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">모델 변경</h2>
-          <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={onClose}>닫기</Button>
+          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{t("model.title")}</h2>
+          <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={onClose}>{t("sheet.close")}</Button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
           {groups === null && !error ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> 불러오는 중...
+              <Loader2 className="size-4 animate-spin" /> {t("model.loading")}
             </div>
           ) : null}
           {error ? <p className="py-10 text-center text-sm text-red-400">{error}</p> : null}
@@ -149,7 +150,7 @@ export function ModelSheet({ sessionId, open, onClose, onUpdated }: ModelSheetPr
           )) : null}
         </div>
         <div className="border-t border-border px-4 py-3">
-          <p className="text-xs font-medium text-muted-foreground">사고 깊이</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("model.thinkingDepth")}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {ALL_LEVELS.map((level) => {
               const disabled = levelDisabled(level);
@@ -175,7 +176,7 @@ export function ModelSheet({ sessionId, open, onClose, onUpdated }: ModelSheetPr
             })}
           </div>
           <Button type="button" size="sm" className="mt-3 w-full" disabled={saving || !selected} onClick={() => void apply()}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : selected ? selected.provider + "/" + selected.modelId + " 로 변경" : "모델을 선택하세요"}
+            {saving ? <Loader2 className="size-4 animate-spin" /> : selected ? t("model.changeTo", { model: selected.provider + "/" + selected.modelId }) : t("model.choose")}
           </Button>
         </div>
       </div>

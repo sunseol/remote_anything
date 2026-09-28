@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import type { SubagentInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
-  idle: { label: "완료", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" },
-  running: { label: "실행 중", className: "border-sky-500/30 bg-sky-500/15 text-sky-400" },
-  interrupted: { label: "중단", className: "border-orange-500/30 bg-orange-500/15 text-orange-400" },
-  error: { label: "오류", className: "border-red-500/30 bg-red-500/15 text-red-400" },
+  idle: { label: t("status.done"), className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" },
+  running: { label: t("status.running"), className: "border-sky-500/30 bg-sky-500/15 text-sky-400" },
+  interrupted: { label: t("status.interrupted"), className: "border-orange-500/30 bg-orange-500/15 text-orange-400" },
+  error: { label: t("status.error"), className: "border-red-500/30 bg-red-500/15 text-red-400" },
 };
 
 interface SubagentModalProps {
@@ -33,7 +34,7 @@ export function SubagentModal({ sessionId, open, onClose }: SubagentModalProps) 
     let cancelled = false;
     api.subagents(sessionId)
       .then((data) => { if (!cancelled) setAgents(data.agents); })
-      .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : "불러오기 실패"); });
+      .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : t("subagents.loadFailed")); });
     return () => { cancelled = true; };
   }, [open, sessionId]);
 
@@ -47,33 +48,33 @@ export function SubagentModal({ sessionId, open, onClose }: SubagentModalProps) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label="서브에이전트">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={t("subagents.title")}>
       <div
         className="flex max-h-[85vh] w-full flex-col rounded-t-2xl border border-border bg-card shadow-lg md:max-h-[70vh] md:max-w-lg md:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           {selected ? (
-            <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => setSelected(null)} aria-label="목록으로 돌아가기">
+            <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => setSelected(null)} aria-label={t("subagents.backToList")}>
               <ChevronLeft className="size-4" />
             </Button>
           ) : (
             <Bot className="size-4 shrink-0 text-muted-foreground" />
           )}
           <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
-            {selected ? selected.description || selected.taskId || "서브에이전트" : "서브에이전트"}
+            {selected ? selected.description || selected.taskId || t("subagents.title") : t("subagents.title")}
           </h2>
-          <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={onClose}>닫기</Button>
+          <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={onClose}>{t("sheet.close")}</Button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
           {agents === null && !error ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> 불러오는 중...
+              <Loader2 className="size-4 animate-spin" /> {t("subagents.loading")}
             </div>
           ) : null}
           {error ? <p className="py-10 text-center text-sm text-red-400">{error}</p> : null}
           {agents !== null && !error && agents.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">이 세션에 서브에이전트 작업이 없습니다.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("subagents.empty")}</p>
           ) : null}
           {agents !== null && !error && !selected ? agents.map((agent, index) => {
             const entry = STATUS_STYLES[agent.status] ?? { label: agent.status, className: "" };
@@ -85,7 +86,7 @@ export function SubagentModal({ sessionId, open, onClose }: SubagentModalProps) 
                 onClick={() => setSelected(agent)}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{agent.description || agent.taskId || "서브에이전트"}</p>
+                  <p className="truncate text-sm font-medium">{agent.description || agent.taskId || t("subagents.title")}</p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {[agent.profile, agent.progress].filter(Boolean).join(" · ") || agent.prompt.slice(0, 60)}
                   </p>
@@ -98,32 +99,32 @@ export function SubagentModal({ sessionId, open, onClose }: SubagentModalProps) 
           {selected ? (
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">상태</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("subagents.status")}</p>
                 <p className="mt-1 text-sm">{STATUS_STYLES[selected.status]?.label ?? selected.status}{selected.progress ? " · " + selected.progress : null}</p>
               </div>
               {selected.taskId ? (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">작업 ID</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t("subagents.taskId")}</p>
                   <p className="mt-1 break-all font-mono text-xs">{selected.taskId}</p>
                 </div>
               ) : null}
               {selected.profile ? (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">프로필</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t("subagents.profile")}</p>
                   <p className="mt-1 text-sm">{selected.profile}{selected.modelCategory ? " · " + selected.modelCategory : null}</p>
                 </div>
               ) : null}
               <div>
-                <p className="text-xs font-medium text-muted-foreground">지시 내용</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("subagents.instructions")}</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{selected.prompt}</p>
               </div>
               {selected.result ? (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">결과</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t("subagents.result")}</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{selected.result}</p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">아직 결과가 없습니다.</p>
+                <p className="text-sm text-muted-foreground">{t("subagents.noResult")}</p>
               )}
             </div>
           ) : null}

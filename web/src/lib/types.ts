@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 export interface ProjectInfo {
   id: string;
   name: string;
@@ -108,5 +110,5 @@ export function thinkingLabel(text: string): string {
   const match = text.match(/^\s*\*\*([^*]+)\*\*/);
   if (match) return match[1].trim();
   const firstLine = text.split("\n").find((line) => line.trim().length > 0) ?? "";
-  return firstLine.trim().slice(0, 60) || "사고 과정";
+  return firstLine.trim().slice(0, 60) || t("transcript.thinkingFallback");
 }

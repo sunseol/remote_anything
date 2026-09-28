@@ -5,14 +5,15 @@ import { Markdown } from "@/components/Markdown";
 import { envelopeText, thinkingLabel, toolCallsOf, toolResultText } from "@/lib/types";
 import { toApiFile } from "@/components/Markdown";
 import type { ContentBlock, Envelope } from "@/lib/types";
+import { t } from "@/lib/i18n";
 
 const TURN_LABELS: Record<string, string> = {
-  start: "턴 시작",
-  started: "턴 시작",
-  end: "턴 완료",
-  finish: "턴 완료",
-  finished: "턴 완료",
-  complete: "턴 완료",
+  start: t("transcript.turnStart"),
+  started: t("transcript.turnStart"),
+  end: t("transcript.turnEnd"),
+  finish: t("transcript.turnEnd"),
+  finished: t("transcript.turnEnd"),
+  complete: t("transcript.turnEnd"),
 };
 
 function ThinkingBlock({ texts }: { texts: string[] }) {
@@ -21,7 +22,7 @@ function ThinkingBlock({ texts }: { texts: string[] }) {
     <Collapsible className="mb-2">
       <CollapsibleTrigger className="group flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
         <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
-        <span className="italic">생각: {label}</span>
+        <span className="italic">{t("transcript.thought", { label })}</span>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="mt-1.5 flex flex-col gap-1.5 border-l-2 border-border pl-2.5">
@@ -45,8 +46,8 @@ function ImageBlock({ block, sessionId }: { block: ContentBlock; sessionId?: str
   }
   if (!src) return null;
   return (
-    <button type="button" className="my-1.5 block max-w-full cursor-zoom-in" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? "이미지 축소" : "이미지 확대"}>
-      <img src={src} alt="첨부 이미지" loading="lazy" className={expanded ? "max-h-[80vh] w-auto max-w-full rounded-lg border border-border" : "max-h-72 w-auto max-w-full rounded-lg border border-border"} />
+    <button type="button" className="my-1.5 block max-w-full cursor-zoom-in" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? t("transcript.collapseImage") : t("transcript.expandImage")}>
+      <img src={src} alt={t("transcript.attachedImage")} loading="lazy" className={expanded ? "max-h-[80vh] w-auto max-w-full rounded-lg border border-border" : "max-h-72 w-auto max-w-full rounded-lg border border-border"} />
     </button>
   );
 }
@@ -67,7 +68,7 @@ function ToolCallCard({ block }: { block: ContentBlock }) {
     <Collapsible className="my-1.5">
       <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/70 bg-background/40 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent">
         <Wrench className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="shrink-0 font-medium">{block.name ?? "도구"}</span>
+        <span className="shrink-0 font-medium">{block.name ?? t("transcript.tool")}</span>
         <span className="min-w-0 flex-1 truncate text-muted-foreground">{summary}</span>
         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
       </CollapsibleTrigger>
@@ -90,7 +91,7 @@ function QuestionCard({ block, answerable, onAnswer }: { block: ContentBlock; an
       <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-3 py-2.5">
         <div className="flex items-center gap-1.5 text-xs font-medium text-sky-400">
           <HelpCircle className="size-3.5" />
-          <span>{chosen ? "답변 전송 중: " + chosen : answerable ? "질문" : "질문 (응답완료)"}</span>
+          <span>{chosen ? t("transcript.sendingAnswer", { answer: chosen }) : answerable ? t("transcript.question") : t("transcript.questionAnswered")}</span>
         </div>
         {questions.map((item, qIndex) => (
           <div key={qIndex} className="mt-2">
@@ -124,12 +125,12 @@ function QuestionCard({ block, answerable, onAnswer }: { block: ContentBlock; an
 
 function ToolResultCard({ envelope }: { envelope: Envelope }) {
   const text = toolResultText(envelope);
-  const firstLine = text.split("\n").find((line) => line.trim().length > 0) ?? "결과 없음";
+  const firstLine = text.split("\n").find((line) => line.trim().length > 0) ?? t("transcript.noResult");
   return (
     <Collapsible className="my-1.5 ml-5">
       <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent">
         <CornerDownLeft className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="shrink-0 font-medium">{envelope.toolName ?? "도구 결과"}</span>
+        <span className="shrink-0 font-medium">{envelope.toolName ?? t("transcript.toolResult")}</span>
         <span className="min-w-0 flex-1 truncate text-muted-foreground">{firstLine.slice(0, 90)}</span>
         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
       </CollapsibleTrigger>
@@ -146,7 +147,7 @@ export const TranscriptLine = memo(function TranscriptLine({ envelope, answerabl
   const role = String(envelope.role ?? "event");
 
   if (role === "user") {
-    const text = envelopeText(envelope) || "(첨부 메시지)";
+    const text = envelopeText(envelope) || t("transcript.attachmentOnly");
     return (
       <div className="cv-auto flex justify-end">
         <div className="max-w-[85%] rounded-2xl rounded-br-md bg-user-bubble px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-user-bubble-foreground">
@@ -193,7 +194,7 @@ export const TranscriptLine = memo(function TranscriptLine({ envelope, answerabl
             <p className="break-words text-xs leading-relaxed text-destructive">{envelope.errorMessage}</p>
           ) : null}
           {!hasAny && !envelope.errorMessage ? (
-            <span className="text-xs text-muted-foreground">(빈 응답)</span>
+            <span className="text-xs text-muted-foreground">{t("transcript.emptyReply")}</span>
           ) : null}
         </div>
       </div>
@@ -201,7 +202,7 @@ export const TranscriptLine = memo(function TranscriptLine({ envelope, answerabl
   }
 
   if (role === "turn-lifecycle") {
-    const label = TURN_LABELS[String(envelope.event ?? "")] ?? "턴 " + String(envelope.event ?? "");
+    const label = TURN_LABELS[String(envelope.event ?? "")] ?? t("transcript.turnOther", { event: String(envelope.event ?? "") });
     return (
       <div className="cv-auto my-1 flex items-center gap-3" role="separator">
         <span className="h-px flex-1 bg-border" />
@@ -216,7 +217,7 @@ function SubagentDoneCard({ taskId, meta, result, sessionId }: { taskId: string;
     <Collapsible className="cv-auto mx-auto w-full max-w-[92%]">
       <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent">
         <Bot className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="shrink-0 font-medium">서브에이저뇈 결과</span>
+        <span className="shrink-0 font-medium">{t("transcript.subagentResult")}</span>
         <span className="min-w-0 flex-1 truncate text-muted-foreground">{meta || taskId}</span>
         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
       </CollapsibleTrigger>
@@ -251,7 +252,7 @@ function SubagentDoneCard({ taskId, meta, result, sessionId }: { taskId: string;
   return (
     <Collapsible className="cv-auto mx-auto w-full max-w-[92%]">
       <CollapsibleTrigger className="text-[11px] text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline">
-        원본 이벤트 ({role})
+        {t("transcript.rawEvent", { role })}
       </CollapsibleTrigger>
       <CollapsibleContent>
         <pre className="mt-1 max-h-56 overflow-auto rounded-lg bg-background/70 p-2 text-[11px] leading-snug whitespace-pre-wrap break-all text-muted-foreground">

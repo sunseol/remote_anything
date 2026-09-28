@@ -1,4 +1,5 @@
 import type { HistoryPage, ProjectInfo, SessionInfo, SessionStatusInfo, SubagentInfo } from "./types";
+import { t } from "./i18n";
 
 export class ApiError extends Error {
   status: number;
@@ -15,7 +16,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(path, init);
   } catch {
-    throw new ApiError("네트워크에 연결할 수 없습니다", 0);
+    throw new ApiError(t("api.offline"), 0);
   }
   if (!response.ok) {
     let message = "HTTP " + response.status;

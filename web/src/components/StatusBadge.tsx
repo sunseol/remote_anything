@@ -1,12 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
-  idle: { label: "대기", className: "bg-secondary text-secondary-foreground" },
-  running: { label: "실행 중", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" },
-  interrupted: { label: "인터럽", className: "border-orange-500/30 bg-orange-500/15 text-orange-400" },
-  error: { label: "오류", className: "border-red-500/30 bg-red-500/15 text-red-400" },
-  suspended: { label: "승인 대기", className: "border-amber-500/30 bg-amber-500/15 text-amber-400" },
+  idle: { label: t("status.idle"), className: "bg-secondary text-secondary-foreground" },
+  running: { label: t("status.running"), className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" },
+  interrupted: { label: t("status.interrupted"), className: "border-orange-500/30 bg-orange-500/15 text-orange-400" },
+  error: { label: t("status.error"), className: "border-red-500/30 bg-red-500/15 text-red-400" },
+  suspended: { label: t("status.suspended"), className: "border-amber-500/30 bg-amber-500/15 text-amber-400" },
   unknown: { label: "", className: "" },
 };
 

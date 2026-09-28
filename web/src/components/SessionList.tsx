@@ -2,6 +2,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProjectInfo, SessionInfo } from "@/lib/types";
 import { cn, relativeTime } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 interface SessionListProps {
   sessions: SessionInfo[];
@@ -24,9 +25,9 @@ export function SessionList({ sessions, projects, activeId, loading, onSelect }:
   if (sessions.length === 0) {
     return (
       <p className="px-4 py-10 text-center text-sm leading-relaxed text-muted-foreground">
-        표시할 세션이 없습니다.
+        {t("list.empty")}
         <br />
-        Aside에서 새 세션을 시작하면 여기에 나타납니다.
+        {t("list.emptyHint")}
       </p>
     );
   }

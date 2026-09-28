@@ -32,6 +32,7 @@ with live streaming, pairing-code auth, and always-on kits for macOS and Windows
 - ⚡ **Real-time streaming** — replies stream into the chat over SSE while the agent works. Status chips and last-activity times keep the list honest.
 - 📝 **Same transcript, same session** — messages sent from your phone are recorded into the local Aside session. Nothing is forked or duplicated.
 - 🔢 **6-digit pairing** — the code prints in the terminal: rate-limited (5 attempts / min per IP, locked after 20 failures until restart) and a 24-hour cookie once paired.
+- 🌐 **English & Korean UI** — follows your browser language; switch any time with the language button in the header.
 - 🆕 **Start sessions remotely** — tap **+** in the list header, pick a project (none / existing / create new), and send the first message from your phone.
 - 🖥️ **Always-on kits** — one command registers the server with launchd on macOS or a scheduled task + watchdog on Windows. Crashes come back on their own.
 - 🌍 **Off-LAN ready** — pair it with Tailscale for HTTPS access from any network. Traffic never leaves your tailnet.

@@ -3,6 +3,7 @@ import { FolderPlus, Loader2, Plus, SquarePen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
 import type { ProjectInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +48,7 @@ export function NewSessionSheet({ open, projects, onClose, onProjectCreated, onC
       setCreatingProject(false);
       setNewProjectName("");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "프로젝트 생성 실패");
+      setError(err instanceof Error ? err.message : t("newSession.projectFailed"));
     }
   };
 
@@ -59,25 +60,25 @@ export function NewSessionSheet({ open, projects, onClose, onProjectCreated, onC
       const result = await api.createSession(draft.trim(), projectId);
       onCreated(result.sessionId);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "세션 생성 실패");
+      setError(err instanceof Error ? err.message : t("newSession.sessionFailed"));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label="새 세션">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={t("newSession.title")}>
       <div
         className="flex max-h-[88vh] w-full flex-col rounded-t-2xl border border-border bg-card shadow-lg md:max-h-[75vh] md:max-w-lg md:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <SquarePen className="size-4 shrink-0 text-muted-foreground" />
-          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">새 세션</h2>
-          <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={onClose}>닫기</Button>
+          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{t("newSession.title")}</h2>
+          <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={onClose}>{t("sheet.close")}</Button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
-          <p className="text-xs font-medium text-muted-foreground">프로젝트</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("newSession.project")}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <button
               type="button"
@@ -87,7 +88,7 @@ export function NewSessionSheet({ open, projects, onClose, onProjectCreated, onC
               )}
               onClick={() => setProjectId(null)}
             >
-              프로젝트 없음
+              {t("newSession.noProject")}
             </button>
             {projects.map((project) => (
               <button
@@ -110,7 +111,7 @@ export function NewSessionSheet({ open, projects, onClose, onProjectCreated, onC
               )}
               onClick={() => setCreatingProject(true)}
             >
-              <Plus className="size-3" /> 새 프로젝트
+              <Plus className="size-3" /> {t("newSession.newProject")}
             </button>
           </div>
           {creatingProject ? (
@@ -120,28 +121,28 @@ export function NewSessionSheet({ open, projects, onClose, onProjectCreated, onC
                 value={newProjectName}
                 onChange={(event) => setNewProjectName(event.target.value)}
                 onKeyDown={(event) => { if (event.key === "Enter") void createProject(); }}
-                placeholder="새 프로젝트 이름"
+                placeholder={t("newSession.projectName")}
                 className="h-9 min-w-0 flex-1 rounded-md border border-border bg-background/60 px-3 text-sm outline-none focus:border-sky-500/50"
                 autoFocus
               />
               <Button type="button" size="sm" className="h-9 shrink-0" disabled={!newProjectName.trim()} onClick={() => void createProject()}>
-                <FolderPlus className="size-4" /> 만들기
+                <FolderPlus className="size-4" /> {t("newSession.create")}
               </Button>
             </div>
           ) : null}
-          <p className="mt-4 text-xs font-medium text-muted-foreground">첫 메시지</p>
+          <p className="mt-4 text-xs font-medium text-muted-foreground">{t("newSession.firstMessage")}</p>
           <Textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             rows={4}
-            placeholder="무엇을 시킬지 입력하세요. 전송하면 새 세션이 시작됩니다."
+            placeholder={t("newSession.placeholder")}
             className="mt-1.5 resize-none bg-background/60"
           />
           {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
         </div>
         <div className="border-t border-border px-4 py-3">
           <Button type="button" className="w-full" disabled={!draft.trim() || submitting} onClick={() => void start()}>
-            {submitting ? <Loader2 className="size-4 animate-spin" /> : "세션 시작"}
+            {submitting ? <Loader2 className="size-4 animate-spin" /> : t("newSession.start")}
           </Button>
         </div>
       </div>

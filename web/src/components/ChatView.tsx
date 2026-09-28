@@ -12,6 +12,7 @@ import { api, ApiError } from "@/lib/api";
 import { connectStream } from "@/lib/stream";
 import type { ConnectionState } from "@/lib/stream";
 import { envelopeText, thinkingLabel } from "@/lib/types";
+import { t } from "@/lib/i18n";
 import type { Envelope, SessionInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -23,17 +24,17 @@ interface ChatViewProps {
 }
 
 const CONNECTION_LABELS: Record<ConnectionState, string> = {
-  connecting: "연결 중...",
-  live: "실시간 연결",
-  disconnected: "연결 끊김 - 재시도 중",
+  connecting: t("conn.connecting"),
+  live: t("conn.live"),
+  disconnected: t("conn.disconnected"),
 };
 
 function describeError(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 401) return "페어링이 만료되었습니다. 페이지를 새로고침하세요.";
+    if (error.status === 401) return t("chat.pairingExpired");
     return error.message;
   }
-  return "알 수 없는 오류가 발생했습니다.";
+  return t("chat.unknownError");
 }
 
 function latestThinkingLabel(messages: Envelope[]): string | null {
@@ -128,7 +129,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
         if (cancelled) return;
         pendingRef.current = null;
         setPendingText(null);
-        toast.error("전송 오류: " + message);
+        toast.error(t("chat.sendError", { message }));
       },
       onState: (state) => {
         if (!cancelled) setConnState(state);
@@ -229,7 +230,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(new Error("읽기 실패"));
+        reader.onerror = () => reject(new Error(t("chat.readFailed")));
         reader.readAsDataURL(file);
       });
       const compressed = await new Promise<string>((resolve) => {
@@ -253,7 +254,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
       const mime = compressed.startsWith("data:image/") ? compressed.slice(5, compressed.indexOf(";")) : "image/jpeg";
       next.push({ filename: file.name || "image.jpg", mime, data: base64 });
     }
-    if (next.length === 0) { toast.error("이미지 파일을 선택해주세요."); return; }
+    if (next.length === 0) { toast.error(t("chat.imagesOnly")); return; }
     setPendingImages((current) => [...current, ...next].slice(0, 4));
   };
 
@@ -266,9 +267,9 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
       pendingRef.current = payload;
       setPendingText(payload);
       if (mode === "steer") {
-        toast.info("답변을 전달했습니다. 세션을 재개합니다.");
+        toast.info(t("chat.answered"));
       } else if (result.mode === "queued") {
-        toast.info("세션이 실행 중입니다. 메시지를 대기열에 추가했습니다.");
+        toast.info(t("chat.queued"));
       }
     } catch (error) {
       toast.error(describeError(error));
@@ -294,8 +295,8 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
           const uploaded = await api.attach(session.id, image.filename, image.data);
           paths.push(uploaded.path);
         }
-        const imageNote = paths.map((p) => "이미지 첨부: " + p).join("\n");
-        const caption = text ? "\n\n" + text : "\n\n첨붐한 이미지를 확인하고 내용을 설명해 주세요.";
+        const imageNote = paths.map((p) => t("chat.imageNote", { path: p })).join("\n");
+        const caption = text ? "\n\n" + text : "\n\n" + t("chat.imageDefaultPrompt");
         payload = imageNote + caption;
         setPendingImages([]);
       }
@@ -303,7 +304,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
       pendingRef.current = payload;
       setPendingText(payload);
       if (result.mode === "queued") {
-        toast.info("세션이 실행 중입니다. 메시지를 대기열에 추가했습니다.");
+        toast.info(t("chat.queued"));
       }
     } catch (error) {
       setDraft(text);
@@ -316,7 +317,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
   const requestStop = async () => {
     try {
       await api.stop(session.id);
-      toast("중지 요청을 보냈습니다.");
+      toast(t("chat.stopRequested"));
     } catch (error) {
       toast.error(describeError(error));
     }
@@ -338,7 +339,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex items-center gap-2 border-b border-border bg-card/40 px-3 py-2.5 md:px-5">
-        <Button variant="ghost" size="icon" className="size-8 md:hidden" onClick={onBack} aria-label="세션 목록으로 돌아가기">
+        <Button variant="ghost" size="icon" className="size-8 md:hidden" onClick={onBack} aria-label={t("chat.back")}>
           <ArrowLeft className="size-4" />
         </Button>
         <div className="min-w-0 flex-1">
@@ -349,19 +350,19 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
             {CONNECTION_LABELS[connState]}
           </p>
         </div>
-        <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => { setReloading(true); setLocalReload((value) => value + 1); }} aria-label="대화 새로고침">
+        <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => { setReloading(true); setLocalReload((value) => value + 1); }} aria-label={t("chat.reload")}>
           <RefreshCw className={cn("size-4", reloading && "animate-spin")} />
         </Button>
         <button
           type="button"
           className="flex h-8 shrink-0 items-center gap-1 rounded-md border border-border/60 bg-background/50 px-2 text-xs text-muted-foreground transition-colors hover:bg-accent"
           onClick={() => setModelOpen(true)}
-          aria-label="모델 변경"
+          aria-label={t("chat.changeModel")}
         >
           <Cpu className="size-3.5" />
-          <span className="max-w-24 truncate">{sessionModel ? sessionModel.modelId.split("/").pop() : "모델"}</span>
+          <span className="max-w-24 truncate">{sessionModel ? sessionModel.modelId.split("/").pop() : t("chat.model")}</span>
         </button>
-        <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => setSubagentsOpen(true)} aria-label="서브에이전트 보기">
+        <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => setSubagentsOpen(true)} aria-label={t("chat.subagents")}>
           <Bot className="size-4" />
         </Button>
         <StatusBadge status={status} suspension={suspension} />
@@ -369,12 +370,12 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
 
       {status === "running" ? (
         <div className="border-b border-border bg-emerald-500/10 px-3 py-1.5 text-center text-xs text-emerald-400 md:px-5">
-          실행 중 - 새 메시지는 대기열에 추가됩니다
+          {t("chat.runningBanner")}
         </div>
       ) : null}
       {status === "suspended" ? (
         <div className="border-b border-border bg-amber-500/10 px-3 py-1.5 text-center text-xs text-amber-400 md:px-5">
-          승인 대기 - Aside 앱에서 승인이 필요합니다
+          {t("chat.suspendedBanner")}
         </div>
       ) : null}
 
@@ -390,11 +391,11 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
               onClick={() => void loadOlder()}
             >
               <ChevronUp className="size-3.5" />
-              {loadingOlder ? "불러오는 중..." : "이전 대화 불러오기"}
+              {loadingOlder ? t("chat.loading") : t("chat.loadOlder")}
             </Button>
           ) : null}
           {messages.length === 0 && pendingText === null ? (
-            <p className="mt-20 text-center text-sm text-muted-foreground">아직 대화가 없습니다. 메시지를 보내보세요.</p>
+            <p className="mt-20 text-center text-sm text-muted-foreground">{t("chat.empty")}</p>
           ) : null}
           {messages.map((envelope, index) => (
             <TranscriptLine key={index} envelope={envelope} answerableQuestionId={answerableQuestionId} onAnswer={answerQuestion} sessionId={session?.id ?? null} />
@@ -403,13 +404,13 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
       <ModelSheet sessionId={session.id} open={modelOpen} onClose={() => setModelOpen(false)} onUpdated={(model) => setSessionModel(model)} />
           {thinkingNow !== null ? (
             <div className="flex items-center gap-2 pl-1 text-xs text-muted-foreground">
-              <span className="shimmer-text font-medium">생각 중...</span>
+              <span className="shimmer-text font-medium">{t("chat.thinking")}</span>
               <span className="min-w-0 truncate italic">{thinkingNow}</span>
             </div>
           ) : null}
           {status === "running" && thinkingNow === null ? (
             <div className="flex items-center gap-2 pl-1 text-xs text-muted-foreground">
-              <span className="shimmer-text font-medium">작업 중...</span>
+              <span className="shimmer-text font-medium">{t("chat.working")}</span>
             </div>
           ) : null}
           {pendingText !== null ? (
@@ -433,7 +434,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
                     type="button"
                     className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-border bg-background text-foreground"
                     onClick={() => setPendingImages((current) => current.filter((_, i) => i !== index))}
-                    aria-label={"첨부 이미지 제거 " + (index + 1)}
+                    aria-label={t("chat.removeImage", { n: index + 1 })}
                   >
                     <X className="size-3" />
                   </button>
@@ -456,7 +457,7 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
             className="size-11 shrink-0"
             disabled={sending}
             onClick={() => fileInputRef.current?.click()}
-            aria-label="이미지 첨부"
+            aria-label={t("chat.attachImage")}
           >
             <ImagePlus className="size-4" />
           </Button>
@@ -466,16 +467,16 @@ export function ChatView({ session, projectName, onBack, reloadKey = 0 }: ChatVi
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
-            placeholder="메시지 입력"
-            aria-label="메시지"
+            placeholder={t("chat.placeholder")}
+            aria-label={t("chat.messageLabel")}
             className="min-h-11 flex-1 resize-none bg-card/60 sm:max-h-40"
           />
           {busy ? (
-            <Button type="button" variant="destructive" size="icon" className="size-11 shrink-0" onClick={() => void requestStop()} aria-label="세션 중지">
+            <Button type="button" variant="destructive" size="icon" className="size-11 shrink-0" onClick={() => void requestStop()} aria-label={t("chat.stop")}>
               <Square className="size-4 fill-current" />
             </Button>
           ) : (
-            <Button type="button" size="icon" className="size-11 shrink-0" disabled={!draft.trim() || sending} onClick={() => void submit()} aria-label="전송">
+            <Button type="button" size="icon" className="size-11 shrink-0" disabled={!draft.trim() || sending} onClick={() => void submit()} aria-label={t("chat.send")}>
               <SendHorizonal className="size-4" />
             </Button>
           )}
